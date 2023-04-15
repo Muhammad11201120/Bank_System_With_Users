@@ -17,10 +17,22 @@ struct stAccountData {
 	string accountBalance;
 	bool deleteFlag = false;
 };
+struct stUsers
+{
+	string userName;
+	string password;
+	int preimission;
+	bool deleteFlag = false;
+};
 enum enTransactions
 {
 	deposit = 1 , withdrow = 2 , totalBalance = 3 , MainMenue = 4
 };
+
+string ClientsFile = "clinet_Data_File.txt";
+string UsersFile = "users.txt";
+stUsers UserAccount;
+
 bool checkIfClientAccountNumberIsAlreadyTaken( string accountNumber , string flieName );
 void pages( enOptions choice );
 stAccountData readRecord()
@@ -68,7 +80,8 @@ void drowHeader()
 	cout << "|" << left << setw( 12 ) << "Account Balance";
 	cout << "\n__________________________________________________________________________________________________\n"
 		<< endl;
-}void drowBalancesScreenHeader()
+}
+void drowBalancesScreenHeader()
 {
 	cout << "\n\t\t\t\t\t Client List" << endl;
 	cout << "\n__________________________________________________________________________________________________\n"
@@ -84,7 +97,6 @@ void drowFooter()
 	cout << "\n__________________________________________________________________________________________________\n"
 		<< endl;
 }
-
 void performTransaction( enTransactions options );
 short showTransactionsOptions();
 short mainMenue() {
@@ -110,12 +122,12 @@ void backToMainMenue() {
 	cout << "To Back To Main menue Press Any Key.." << endl;
 	system( "pause" );
 	pages( ( enOptions ) mainMenue() );
-}void backToTransactionsMenue() {
+}
+void backToTransactionsMenue() {
 	cout << "To Back To Transactions menue Press Any Key.." << endl;
 	system( "pause" );
 	performTransaction( ( enTransactions ) showTransactionsOptions() );
 }
-
 vector<string> seperateString( string& text , string seperator = " " )
 {
 	int position = 0;
@@ -155,6 +167,20 @@ stAccountData convertLineToRecord( string line , string seperator = "#//#" )
 
 	return client;
 }
+stUsers convertUserLineToRecord( string line , string seperator = "#//#" )
+{
+	stUsers user;
+	vector<string> vUserData;
+
+	vUserData = seperateString( line , seperator );
+
+	user.userName = vUserData[ 0 ];
+	user.password = vUserData[ 1 ];
+	user.preimission = stoi( vUserData[ 2 ] );
+
+
+	return user;
+}
 vector<stAccountData> ReadFileToVector( string fileName )
 {
 	vector<stAccountData> vRecord;
@@ -167,8 +193,27 @@ vector<stAccountData> ReadFileToVector( string fileName )
 		stAccountData clinet;
 		while ( getline( file , line ) )
 		{
-			clinet = convertLineToRecord( line , "#//#" );
+			clinet = convertLineToRecord( line );
 			vRecord.push_back( clinet );
+		}
+		file.close();
+	}
+	return vRecord;
+}
+vector<stUsers> loadUsersFromFile( string fileName )
+{
+	vector<stUsers> vRecord;
+	fstream file;
+	file.open( fileName , ios::in );
+
+	if ( file.is_open() )
+	{
+		string line;
+		stUsers user;
+		while ( getline( file , line ) )
+		{
+			user = convertUserLineToRecord( line );
+			vRecord.push_back( user );
 		}
 		file.close();
 	}
@@ -219,30 +264,29 @@ vector<stAccountData> refreshFileAfterDeleteAccount( string fileName , stAccount
 	}
 	return vRecord;
 }
-
-void printClientData( stAccountData& client )
-{
+void printClientData( stAccountData& client ) {
 	cout << "|" << left << setw( 15 ) << client.accountNumber;
 	cout << "|" << left << setw( 10 ) << client.pinCode;
 	cout << "|" << left << setw( 40 ) << client.name;
 	cout << "|" << left << setw( 12 ) << client.phone;
 	cout << "|" << left << setw( 12 ) << client.accountBalance;
 	cout << endl;
-}void printBalancesData( stAccountData& client )
+}
+void printBalancesData( stAccountData& client )
 {
 	cout << "|" << left << setw( 15 ) << client.accountNumber;
 	cout << "|" << left << setw( 40 ) << client.name;
 	cout << "|" << left << setw( 12 ) << client.accountBalance;
 	cout << endl;
 }
-void showClientsData( vector<stAccountData> vClients )
-{
+void showClientsData( vector<stAccountData> vClients ) {
 
 	for ( stAccountData& cl : vClients )
 	{
 		printClientData( cl );
 	}
-}void showBalancessData( vector<stAccountData> vClients )
+}
+void showBalancessData( vector<stAccountData> vClients )
 {
 
 	for ( stAccountData& cl : vClients )
@@ -286,6 +330,18 @@ bool checkIfClientAccountNumberIsAlreadyTaken( string accountNumber , string fli
 	}
 	return false;
 }
+bool checkIfUserNameAndPasswordIsCorrect( string userName , string password , stUsers& user ) {
+
+	vector <stUsers> vUsers = loadUsersFromFile( UsersFile );
+	for ( stUsers& u : vUsers ) {
+		if ( u.userName == userName && u.password == password )
+		{
+			user = u;
+			return true;
+		}
+	}
+	return false;
+}
 vector<stAccountData> saveClientsDataToFileAfterDelete( string fileName , vector<stAccountData>& vClients )
 {
 	fstream file;
@@ -325,7 +381,7 @@ void readRecordToFile( stAccountData& stRecord )
 	stRecord = readRecord();
 	WriteRecordToFile( "clinet_Data_File.txt" , stRecord );
 }
-void deleteClient( vector<stAccountData>& vClients , stAccountData& client , string accuontNumberToDelete )
+void deleteClients( vector<stAccountData>& vClients , stAccountData& client , string accuontNumberToDelete )
 {
 
 	for ( stAccountData& cl : vClients )
@@ -340,7 +396,7 @@ void deleteClient( vector<stAccountData>& vClients , stAccountData& client , str
 	// refresh the clients
 	vClients = refreshFileAfterDeleteAccount( "clinet_Data_File.txt" , client );
 }
-void updateClient( vector<stAccountData>& vClients , stAccountData& client , string accountNumber )
+void updateClients( vector<stAccountData>& vClients , stAccountData& client , string accountNumber )
 {
 	stAccountData updatedClient = readToUpdateRecord();
 
@@ -363,7 +419,6 @@ void showClients() {
 	showClientsData( vClients );
 	drowFooter();
 }
-
 void addClient() {
 	stAccountData stRecord;
 	char more = 'y';
@@ -380,8 +435,6 @@ void addClient() {
 		cin >> more;
 	} while ( more == 'y' || more == 'Y' );
 }
-
-
 void findClient() {
 	showClients();
 	vector<stAccountData> vClients = ReadFileToVector( "clinet_Data_File.txt" );
@@ -402,8 +455,6 @@ void findClient() {
 	}
 
 }
-
-
 void deleteClient() {
 	showClients();
 	vector <stAccountData> vClients = ReadFileToVector( "clinet_Data_File.txt" );
@@ -423,7 +474,7 @@ void deleteClient() {
 		cin >> del;
 		if ( del == 'y' || del == 'Y' )
 		{
-			deleteClient( vClients , client , accountNumberToDelete );
+			deleteClients( vClients , client , accountNumberToDelete );
 			cout << "The Account Deleted Succsessfuly.." << endl;
 		}
 	}
@@ -432,8 +483,6 @@ void deleteClient() {
 		cout << "No Account With This " << accountNumberToDelete << "Number.." << endl;
 	}
 }
-
-
 void updateClient() {
 	showClients();
 	vector<stAccountData> vClients = ReadFileToVector( "clinet_Data_File.txt" );
@@ -453,7 +502,7 @@ void updateClient() {
 		cin >> updateOrNot;
 		if ( updateOrNot == 'Y' || updateOrNot == 'y' )
 		{
-			updateClient( vClients , client , accountToFind );
+			updateClients( vClients , client , accountToFind );
 		}
 	}
 	else
@@ -551,7 +600,6 @@ void TotalBalance() {
 	showBalancessData( vClients );
 	drowFooter();
 }
-
 void performTransaction( enTransactions options ) {
 	switch ( options )
 	{
@@ -614,8 +662,33 @@ void pages( enOptions choice ) {
 		exit;
 	}
 }
+bool loadUser( string userName , string password ) {
+	if ( checkIfUserNameAndPasswordIsCorrect( userName , password , UserAccount ) )
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+void login() {
+	bool loginFlag = false;
+	string userName = "";
+	string password = "";
+	do
+	{
+		cout << "Enter User Name: ";
+		getline( cin << ws , userName );
+		cout << "Enter Password: ";
+		getline( cin << ws , password );
+
+		loginFlag = !loadUser( userName , password );
+	} while ( loginFlag );
+	pages( ( enOptions ) mainMenue() );
+}
 int main()
 {
-	pages( ( enOptions ) mainMenue() );
+	login();
 	return 0;
 }

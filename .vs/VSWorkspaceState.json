@@ -1,7 +1,8 @@
 {
   "ExpandedNodes": [
     "",
-    "\\BankSystem"
+    "\\BankSystem",
+    "\\BankSystem\\Debug"
   ],
   "PreviewInSolutionExplorer": false
 }

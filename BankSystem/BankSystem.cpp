@@ -5,10 +5,24 @@
 #include <fstream>
 
 using namespace std;
+///////////////////ENUMS///////////////////
 enum enOptions
 {
-	showList = 1 , addList = 2 , deletList = 3 , updateList = 4 , findList = 5 , transactions = 6 , Exit = 7
+	showList = 1 , addList = 2 , deletList = 3 , updateList = 4 , findList = 5 , transactions = 6 , ManaguUsers = 7 , Logout = 8
 };
+enum enManagUsersOptions
+{
+	ShowUers = 1 , AddUser = 2 , DeleteUser = 3 , UpdateUser = 4 , FindUser = 5 , Transactions = 6 , BackToMAinMenue = 7
+};
+enum enPremissions
+{
+	eAll = -1 , pListClients = 1 , pAddNewClint = 2 , pDeleteClient = 4 , pUpdateClients = 8 , pFindClients = 16 , pTransactions = 32 , pManagUsers = 64
+};
+enum enTransactions
+{
+	deposit = 1 , withdrow = 2 , totalBalance = 3 , MainMenue = 4
+};
+////////////////STRUCTS/////////////////
 struct stAccountData {
 	string accountNumber;
 	string pinCode;
@@ -24,15 +38,11 @@ struct stUsers
 	int preimission;
 	bool deleteFlag = false;
 };
-enum enTransactions
-{
-	deposit = 1 , withdrow = 2 , totalBalance = 3 , MainMenue = 4
-};
-
+//////////////GLOBAL VARS//////////////////
 string ClientsFile = "clinet_Data_File.txt";
 string UsersFile = "users.txt";
 stUsers UserAccount;
-
+//////////////FUNCTIONS////////////////////
 bool checkIfClientAccountNumberIsAlreadyTaken( string accountNumber , string flieName );
 void pages( enOptions choice );
 stAccountData readRecord()
@@ -53,6 +63,75 @@ stAccountData readRecord()
 	getline( cin >> ws , record.phone );
 	cout << "Enter Account Balance: ";
 	getline( cin >> ws , record.accountBalance );
+	return record;
+}
+bool checkIfUserAccountNameIsAlreadyTaken( string accountName , string flieName );
+int readPremissions() {
+	int premission = 0;
+	char answer = 'n';
+	cout << "Do You Want To Give This User Full Access ? ";
+	cin >> answer;
+	if ( answer == 'y' || answer == 'Y' )
+	{
+		return -1;
+	}
+	cout << "Do You Want To Give This User  Access To Show Clients List ? ";
+	cin >> answer;
+	if ( answer == 'y' || answer == 'Y' )
+	{
+		premission += enPremissions::pListClients;
+	}
+	cout << "Do You Want To Give This User Access To Add New Client ? ";
+	cin >> answer;
+	if ( answer == 'y' || answer == 'Y' )
+	{
+		premission += enPremissions::pAddNewClint;
+	}
+	cout << "Do You Want To Give This User Access To Delete Clients ? ";
+	cin >> answer;
+	if ( answer == 'y' || answer == 'Y' )
+	{
+		premission += enPremissions::pDeleteClient;
+	}
+	cout << "Do You Want To Give This User Access To Update Clients ? ";
+	cin >> answer;
+	if ( answer == 'y' || answer == 'Y' )
+	{
+		premission += enPremissions::pUpdateClients;
+	}
+	cout << "Do You Want To Give This User Access To Find A Client ? ";
+	cin >> answer;
+	if ( answer == 'y' || answer == 'Y' )
+	{
+		premission += enPremissions::pFindClients;
+	}
+	cout << "Do You Want To Give This User Access To See Transactions? ";
+	cin >> answer;
+	if ( answer == 'y' || answer == 'Y' )
+	{
+		premission += enPremissions::pTransactions;
+	}
+	cout << "Do You Want To Give This User Access To Manage Clients ? ";
+	cin >> answer;
+	if ( answer == 'y' || answer == 'Y' )
+	{
+		premission += enPremissions::pManagUsers;
+	}
+	return premission;
+}
+stUsers readUserRecord()
+{
+	stUsers record;
+	cout << "Enter User Name: ";
+	getline( cin >> ws , record.userName );
+	while ( checkIfUserAccountNameIsAlreadyTaken( record.userName , UsersFile ) )
+	{
+		cout << "\nClient With [ " << record.userName << " ] is Already Exist, Enter Another User Name." << endl;
+		getline( cin >> ws , record.userName );
+	}
+	cout << "Enter A Password: ";
+	getline( cin >> ws , record.password );
+	record.preimission = readPremissions();
 	return record;
 }
 stAccountData readToUpdateRecord()
@@ -81,6 +160,18 @@ void drowHeader()
 	cout << "\n__________________________________________________________________________________________________\n"
 		<< endl;
 }
+void drowUsersHeader()
+{
+	cout << "\n\t\t\t\t\t Users List" << endl;
+	cout << "\n__________________________________________________________________________________________________\n"
+		<< endl;
+	cout << "|" << left << setw( 15 ) << "User Name ";
+	cout << "|" << left << setw( 10 ) << "Password ";
+	cout << "|" << left << setw( 40 ) << "Premissions ";
+
+	cout << "\n__________________________________________________________________________________________________\n"
+		<< endl;
+}
 void drowBalancesScreenHeader()
 {
 	cout << "\n\t\t\t\t\t Client List" << endl;
@@ -105,15 +196,16 @@ short mainMenue() {
 	cout << "\n-------------------------------------------------------\n";
 	cout << "\t\t\t MAIN MENUE\n";
 	cout << "-------------------------------------------------------\n";
-	cout << "\t[1]=> Show Clients" << endl;
-	cout << "\t[2]=> Add New Client" << endl;
-	cout << "\t[3]=> Delete Client" << endl;
-	cout << "\t[4]=> Update Client" << endl;
-	cout << "\t[5]=> Find Client" << endl;
-	cout << "\t[6]=> Transactions" << endl;
-	cout << "\t[7]=> Exit";
+	cout << "\t[1]=> SHOW CLIENTS" << endl;
+	cout << "\t[2]=> ADD NEW CLIENT" << endl;
+	cout << "\t[3]=> SELETE CLIENT" << endl;
+	cout << "\t[4]=> UPDATE CLIENT" << endl;
+	cout << "\t[5]=> FIND CLIENT" << endl;
+	cout << "\t[6]=> TRANSACTIONS" << endl;
+	cout << "\t[7]=> MANAGE USERS" << endl;
+	cout << "\t[8]=> LOGOUT";
 	cout << "\n-------------------------------------------------------\n";
-	cout << "Choose What You Want To Do From [1 - 7] ?: ";
+	cout << "Choose What You Want To Do From [1 - 8] ?: ";
 	cin >> choice;
 	return choice;
 
@@ -200,6 +292,25 @@ vector<stAccountData> ReadFileToVector( string fileName )
 	}
 	return vRecord;
 }
+vector<stUsers> ReadUsersFileToVector( string fileName )
+{
+	vector<stUsers> vRecord;
+	fstream file;
+	file.open( fileName , ios::in );
+
+	if ( file.is_open() )
+	{
+		string line;
+		stUsers user;
+		while ( getline( file , line ) )
+		{
+			user = convertUserLineToRecord( line );
+			vRecord.push_back( user );
+		}
+		file.close();
+	}
+	return vRecord;
+}
 vector<stUsers> loadUsersFromFile( string fileName )
 {
 	vector<stUsers> vRecord;
@@ -231,6 +342,15 @@ string convertDataToLineOfData( stAccountData& record , string seperator = " " )
 
 	return stRescord;
 }
+string convertUserDataToLineOfData( stUsers& record , string seperator = " " )
+{
+	string stRescord = "";
+
+	stRescord = record.userName + seperator;
+	stRescord += record.password + seperator;
+	stRescord += record.preimission;
+	return stRescord;
+}
 void WriteRecordToFile( string fileName , stAccountData& record )
 {
 	fstream file;
@@ -239,6 +359,18 @@ void WriteRecordToFile( string fileName , stAccountData& record )
 	{
 
 		file << convertDataToLineOfData( record , "#//#" ) << endl;
+
+		file.close();
+	}
+}
+void WriteUserRecordToFile( string fileName , stUsers& record )
+{
+	fstream file;
+	file.open( fileName , ios::out | ios::app );
+	if ( file.is_open() )
+	{
+
+		file << convertUserDataToLineOfData( record , "#//#" ) << endl;
 
 		file.close();
 	}
@@ -272,6 +404,12 @@ void printClientData( stAccountData& client ) {
 	cout << "|" << left << setw( 12 ) << client.accountBalance;
 	cout << endl;
 }
+void printUserData( stUsers& user ) {
+	cout << "|" << left << setw( 15 ) << user.userName;
+	cout << "|" << left << setw( 10 ) << user.password;
+	cout << "|" << left << setw( 40 ) << user.preimission;
+	cout << endl;
+}
 void printBalancesData( stAccountData& client )
 {
 	cout << "|" << left << setw( 15 ) << client.accountNumber;
@@ -284,6 +422,13 @@ void showClientsData( vector<stAccountData> vClients ) {
 	for ( stAccountData& cl : vClients )
 	{
 		printClientData( cl );
+	}
+}
+void showUsersData( vector<stUsers> vUsers ) {
+
+	for ( stUsers& u : vUsers )
+	{
+		printUserData( u );
 	}
 }
 void showBalancessData( vector<stAccountData> vClients )
@@ -325,6 +470,30 @@ bool checkIfClientAccountNumberIsAlreadyTaken( string accountNumber , string fli
 				return true;
 			}
 			vClients.push_back( client );
+		}
+		file.close();
+	}
+	return false;
+}
+bool checkIfUserAccountNameIsAlreadyTaken( string accountName , string flieName ) {
+	vector <stUsers> vUsers;
+	fstream file;
+	file.open( flieName , ios::in ); // open file in read mode
+
+	if ( file.is_open() )
+	{
+		string line;
+		stUsers user;
+
+		while ( getline( file , line ) )
+		{
+			user = convertUserLineToRecord( line );
+			if ( user.userName == accountName )
+			{
+				file.close();
+				return true;
+			}
+			vUsers.push_back( user );
 		}
 		file.close();
 	}
@@ -379,7 +548,13 @@ void readRecordToFile( stAccountData& stRecord )
 {
 
 	stRecord = readRecord();
-	WriteRecordToFile( "clinet_Data_File.txt" , stRecord );
+	WriteRecordToFile( ClientsFile , stRecord );
+}
+void readUserRecordToFile( stUsers& stRecord )
+{
+
+	stRecord = readUserRecord();
+	WriteUserRecordToFile( UsersFile , stRecord );
 }
 void deleteClients( vector<stAccountData>& vClients , stAccountData& client , string accuontNumberToDelete )
 {
@@ -414,116 +589,187 @@ void updateClients( vector<stAccountData>& vClients , stAccountData& client , st
 	}
 }
 void showClients() {
-	vector<stAccountData> vClients = ReadFileToVector( "clinet_Data_File.txt" );
+	vector<stAccountData> vClients = ReadFileToVector( ClientsFile );
 	drowHeader();
-	showClientsData( vClients );
+	if ( UserAccount.preimission == enPremissions::eAll || UserAccount.preimission == enPremissions::pListClients )
+	{
+		showClientsData( vClients );
+	}
+	else
+	{
+		cout << "Access Denied,,\n Please Contact Your Admin..\n\n" << endl;
+		drowFooter();
+	}
+	drowFooter();
+}
+void showUserss() {
+	vector<stUsers> vUsers = ReadUsersFileToVector( UsersFile );
+	drowUsersHeader();
+	showUsersData( vUsers );
 	drowFooter();
 }
 void addClient() {
-	stAccountData stRecord;
+	if ( UserAccount.preimission == enPremissions::eAll || UserAccount.preimission == enPremissions::pAddNewClint )
+	{
+		stAccountData stRecord;
+		char more = 'y';
+
+		// Insert Clients Data
+		do
+		{
+			system( "cls" );
+			cout << "Enter Client Data: \n";
+
+			readRecordToFile( stRecord );
+
+			cout << "Do You Want To Add Other Rcords? : y => yes | n => no : ";
+			cin >> more;
+		} while ( more == 'y' || more == 'Y' );
+	}
+	else
+	{
+		cout << "Access Denied ,, \nPlease Contact Your Admin..\n\n" << endl;
+	}
+
+}
+void addUser() {
+	stUsers stRecord;
 	char more = 'y';
 
 	// Insert Clients Data
 	do
 	{
 		system( "cls" );
-		cout << "Enter Client Data: \n";
+		cout << "Enter User Data: \n";
 
-		readRecordToFile( stRecord );
+		readUserRecordToFile( stRecord );
 
-		cout << "Do You Want To Add Other Rcords? : y => yes | n => no : ";
+		cout << "Do You Want To Add Other User? : y => yes | n => no : ";
 		cin >> more;
 	} while ( more == 'y' || more == 'Y' );
 }
 void findClient() {
-	showClients();
-	vector<stAccountData> vClients = ReadFileToVector( "clinet_Data_File.txt" );
-	stAccountData client;
-	string accountToFind = "";
-	cout << "Do You Want To Search For Client? ";
-	getline( cin >> ws , accountToFind );
-	if ( findClientByAccountNumber( vClients , client , accountToFind ) )
+	if ( UserAccount.preimission == enPremissions::eAll || UserAccount.preimission == enPremissions::pFindClients )
 	{
+		showClients();
+		vector<stAccountData> vClients = ReadFileToVector( "clinet_Data_File.txt" );
+		stAccountData client;
+		string accountToFind = "";
+		cout << "Do You Want To Search For Client? ";
+		getline( cin >> ws , accountToFind );
+		if ( findClientByAccountNumber( vClients , client , accountToFind ) )
+		{
 
-		drowHeader();
-		printClientData( client );
-		drowFooter();
+			drowHeader();
+			printClientData( client );
+			drowFooter();
+		}
+		else
+		{
+			cout << "No Account With That Number.." << endl;
+		}
 	}
 	else
 	{
-		cout << "No Account With That Number.." << endl;
+		cout << "Access Denied ,, \nPlease Contact Your Admin..\n\n" << endl;
 	}
+
 
 }
 void deleteClient() {
-	showClients();
-	vector <stAccountData> vClients = ReadFileToVector( "clinet_Data_File.txt" );
-	string accountToFind = "";
-	string accountNumberToDelete;
-	stAccountData client;
-	cout << "Enter An Account Number To Delete: ";
-	getline( cin >> ws , accountNumberToDelete );
-	if ( findClientByAccountNumber( vClients , client , accountNumberToDelete ) )
+	if ( UserAccount.preimission == enPremissions::eAll || UserAccount.preimission == enPremissions::pDeleteClient )
 	{
-		system( "cls" );
-		drowHeader();
-		printClientData( client );
-		drowFooter();
-		char del;
-		cout << "Are You Sure You Want to delete " << client.name << " ?";
-		cin >> del;
-		if ( del == 'y' || del == 'Y' )
+		showClients();
+		vector <stAccountData> vClients = ReadFileToVector( "clinet_Data_File.txt" );
+		string accountToFind = "";
+		string accountNumberToDelete;
+		stAccountData client;
+		cout << "Enter An Account Number To Delete: ";
+		getline( cin >> ws , accountNumberToDelete );
+		if ( findClientByAccountNumber( vClients , client , accountNumberToDelete ) )
 		{
-			deleteClients( vClients , client , accountNumberToDelete );
-			cout << "The Account Deleted Succsessfuly.." << endl;
+			system( "cls" );
+			drowHeader();
+			printClientData( client );
+			drowFooter();
+			char del;
+			cout << "Are You Sure You Want to delete " << client.name << " ?";
+			cin >> del;
+			if ( del == 'y' || del == 'Y' )
+			{
+				deleteClients( vClients , client , accountNumberToDelete );
+				cout << "The Account Deleted Succsessfuly.." << endl;
+			}
+		}
+		else
+		{
+			cout << "No Account With This " << accountNumberToDelete << "Number.." << endl;
 		}
 	}
 	else
 	{
-		cout << "No Account With This " << accountNumberToDelete << "Number.." << endl;
+		cout << "Access Denied ,, \nPlease Contact Your Admin..\n\n" << endl;
 	}
+
 }
 void updateClient() {
-	showClients();
-	vector<stAccountData> vClients = ReadFileToVector( "clinet_Data_File.txt" );
-	stAccountData client;
-	string accountToFind = "";
-	cout << "Do You Want To Search For Client? ";
-	getline( cin >> ws , accountToFind );
-	if ( findClientByAccountNumber( vClients , client , accountToFind ) )
+	if ( UserAccount.preimission == enPremissions::eAll || UserAccount.preimission == enPremissions::pUpdateClients )
 	{
-		system( "cls" );
-		drowHeader();
-		printClientData( client );
-		drowFooter();
-		// update Client
-		char updateOrNot;
-		cout << "Do you Want To Update Client (" << client.name << ") ?";
-		cin >> updateOrNot;
-		if ( updateOrNot == 'Y' || updateOrNot == 'y' )
+		showClients();
+		vector<stAccountData> vClients = ReadFileToVector( "clinet_Data_File.txt" );
+		stAccountData client;
+		string accountToFind = "";
+		cout << "Do You Want To Search For Client? ";
+		getline( cin >> ws , accountToFind );
+		if ( findClientByAccountNumber( vClients , client , accountToFind ) )
 		{
-			updateClients( vClients , client , accountToFind );
+			system( "cls" );
+			drowHeader();
+			printClientData( client );
+			drowFooter();
+			// update Client
+			char updateOrNot;
+			cout << "Do you Want To Update Client (" << client.name << ") ?";
+			cin >> updateOrNot;
+			if ( updateOrNot == 'Y' || updateOrNot == 'y' )
+			{
+				updateClients( vClients , client , accountToFind );
+			}
+		}
+		else
+		{
+			cout << "No Account With That Number.." << endl;
 		}
 	}
 	else
 	{
-		cout << "No Account With That Number.." << endl;
+		cout << "Access Denied ,, \nPlease Contact Your Admin..\n\n" << endl;
 	}
+
 }
 short showTransactionsOptions() {
-	system( "cls" ); // system("clear");
-	short choice = 0;
-	cout << "\n-------------------------------------------------------\n";
-	cout << "\t\t Transactions Screen\n";
-	cout << "-------------------------------------------------------\n";
-	cout << "\t[1]=> Deposit" << endl;
-	cout << "\t[2]=> Withdrow" << endl;
-	cout << "\t[3]=> TotalBalance" << endl;
-	cout << "\t[4]=> Main Menue";
-	cout << "\n-------------------------------------------------------\n";
-	cout << "Choose What You Want To Do From [1 - 4] ?: ";
-	cin >> choice;
-	return choice;
+	if ( UserAccount.preimission == enPremissions::eAll || UserAccount.preimission == enPremissions::pTransactions )
+	{
+		system( "cls" ); // system("clear");
+		short choice = 0;
+		cout << "\n-------------------------------------------------------\n";
+		cout << "\t\t Transactions Screen\n";
+		cout << "-------------------------------------------------------\n";
+		cout << "\t[1]=> Deposit" << endl;
+		cout << "\t[2]=> Withdrow" << endl;
+		cout << "\t[3]=> TotalBalance" << endl;
+		cout << "\t[4]=> Main Menue";
+		cout << "\n-------------------------------------------------------\n";
+		cout << "Choose What You Want To Do From [1 - 4] ?: ";
+		cin >> choice;
+		return choice;
+	}
+	else
+	{
+		cout << "Access Denied ,, \nPlease Contact Your Admin..\n\n" << endl;
+		return 0;
+	}
+
 }
 void Deposit() {
 	showClients();
@@ -621,6 +867,102 @@ void performTransaction( enTransactions options ) {
 		break;
 	}
 }
+bool loadUser( string userName , string password ) {
+	if ( checkIfUserNameAndPasswordIsCorrect( userName , password , UserAccount ) )
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+//////////////users///////////////////
+void screens( enManagUsersOptions choice );
+void login() {
+	bool loginFlag = false;
+	string userName = "";
+	string password = "";
+	do
+	{
+		system( "cls" ); // system("clear");
+		cout << "\n-------------------------------------------------------\n";
+		cout << "\t\t\t LOGIN PAGE\n";
+		cout << "-------------------------------------------------------\n";
+		cout << "Enter User Name: ";
+		getline( cin >> ws , userName );
+		cout << "Enter Password: ";
+		getline( cin >> ws , password );
+
+		loginFlag = !loadUser( userName , password );
+	} while ( loginFlag );
+	pages( ( enOptions ) mainMenue() );
+}
+short manageUsersScreen() {
+	if ( UserAccount.preimission == enPremissions::eAll || UserAccount.preimission == enPremissions::pManagUsers )
+	{
+		system( "cls" ); // system("clear");
+		short choice = 0;
+		cout << "\n-------------------------------------------------------\n";
+		cout << "\t\t\t MANAGE USERS MENUE SCREEN\n";
+		cout << "-------------------------------------------------------\n";
+		cout << "\t[1]=> SHOW USERS" << endl;
+		cout << "\t[2]=> ADD NEW USERS" << endl;
+		cout << "\t[3]=> DELETE USERS" << endl;
+		cout << "\t[4]=> UPDATE USERS" << endl;
+		cout << "\t[5]=> FIND USERS" << endl;
+		cout << "\t[6]=> TRANSACTIONS" << endl;
+		cout << "\t[7]=> BACK TO MAIN MENUE";
+		cout << "\n-------------------------------------------------------\n";
+		cout << "Choose What You Want To Do From [1 - 7] ?: ";
+		cin >> choice;
+		return choice;
+	}
+	else
+	{
+		cout << "Access Denied ,, \nPlease Contact Your Admin..\n\n" << endl;
+		return 0;
+	}
+
+}
+void backToManageUsersMainMenue() {
+	cout << "To Back To Manage Users menue Press Any Key.." << endl;
+	system( "pause" );
+	screens( ( enManagUsersOptions ) manageUsersScreen() );
+}
+void screens( enManagUsersOptions choice ) {
+	switch ( choice )
+	{
+	case enManagUsersOptions::ShowUers:
+		system( "cls" );
+		showUserss();
+		backToManageUsersMainMenue();
+		break;
+	case enManagUsersOptions::AddUser:
+		system( "cls" );
+		addUser();
+		backToManageUsersMainMenue();
+		break;
+	case enManagUsersOptions::DeleteUser:
+		system( "cls" );
+		break;
+	case enManagUsersOptions::UpdateUser:
+		system( "cls" );
+		break;
+	case enManagUsersOptions::FindUser:
+		system( "cls" );
+		break;
+	case enManagUsersOptions::Transactions:
+		system( "cls" );
+		performTransaction( ( enTransactions ) showTransactionsOptions() );
+		break;
+	case enManagUsersOptions::BackToMAinMenue:
+		system( "cls" );
+		backToMainMenue();
+		break;
+
+	}
+}
 void pages( enOptions choice ) {
 	switch ( choice )
 	{
@@ -657,36 +999,17 @@ void pages( enOptions choice ) {
 	case enOptions::transactions:
 		system( "cls" );
 		performTransaction( ( enTransactions ) showTransactionsOptions() );
-	case enOptions::Exit:
+		break;
+	case enOptions::ManaguUsers:
+		system( "cls" );
+		screens( ( enManagUsersOptions ) manageUsersScreen() );
+		break;
+	case enOptions::Logout:
 		system( "cls" );
 		exit;
 	}
 }
-bool loadUser( string userName , string password ) {
-	if ( checkIfUserNameAndPasswordIsCorrect( userName , password , UserAccount ) )
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-void login() {
-	bool loginFlag = false;
-	string userName = "";
-	string password = "";
-	do
-	{
-		cout << "Enter User Name: ";
-		getline( cin << ws , userName );
-		cout << "Enter Password: ";
-		getline( cin << ws , password );
 
-		loginFlag = !loadUser( userName , password );
-	} while ( loginFlag );
-	pages( ( enOptions ) mainMenue() );
-}
 int main()
 {
 	login();

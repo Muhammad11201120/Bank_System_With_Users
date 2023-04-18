@@ -42,9 +42,13 @@ struct stUsers
 string ClientsFile = "clinet_Data_File.txt";
 string UsersFile = "users.txt";
 stUsers UserAccount;
-//////////////FUNCTIONS////////////////////
+//////////////FUNCTIONS Calls////////////////////
 bool checkIfClientAccountNumberIsAlreadyTaken( string accountNumber , string flieName );
 void pages( enOptions choice );
+bool chechPremissions( enPremissions premission );
+bool checkIfUserAccountNameIsAlreadyTaken( string accountName , string flieName );
+void backToManageUsersMainMenue();
+//////////////FUNCTIONS/////////////////////
 stAccountData readRecord()
 {
 	stAccountData record;
@@ -65,7 +69,6 @@ stAccountData readRecord()
 	getline( cin >> ws , record.accountBalance );
 	return record;
 }
-bool checkIfUserAccountNameIsAlreadyTaken( string accountName , string flieName );
 int readPremissions() {
 	int premission = 0;
 	char answer = 'n';
@@ -145,6 +148,18 @@ stAccountData readToUpdateRecord()
 	getline( cin >> ws , record.phone );
 	cout << "Enter Account Balance: ";
 	getline( cin >> ws , record.accountBalance );
+	return record;
+}
+stUsers readToUpdateUserRecord()
+{
+	stUsers record;
+	int premissiomn = 0;
+	cout << "Enter User Name: ";
+	getline( cin >> ws , record.userName );
+	cout << "Enter Passwrod: ";
+	getline( cin >> ws , record.password );
+	premissiomn = readPremissions();
+
 	return record;
 }
 void drowHeader()
@@ -227,7 +242,7 @@ vector<string> seperateString( string& text , string seperator = " " )
 	vector<string> words;
 	position = text.find( seperator );
 
-	while ( position != string::npos )
+	while ( ( position = text.find( seperator ) ) != std::string::npos )
 	{
 		word = text.substr( 0 , position );
 		if ( word != "" )
@@ -255,7 +270,7 @@ stAccountData convertLineToRecord( string line , string seperator = "#//#" )
 	client.pinCode = vClientData[ 1 ];
 	client.name = vClientData[ 2 ];
 	client.phone = vClientData[ 3 ];
-	client.accountBalance = vClientData[ 4 ];
+	client.accountBalance = stod( vClientData[ 4 ] );
 
 	return client;
 }
@@ -334,11 +349,11 @@ string convertDataToLineOfData( stAccountData& record , string seperator = " " )
 {
 	string stRescord = "";
 
-	stRescord = record.accountNumber + seperator;
+	stRescord += record.accountNumber + seperator;
 	stRescord += record.pinCode + seperator;
 	stRescord += record.name + seperator;
 	stRescord += record.phone + seperator;
-	stRescord += record.accountBalance;
+	stRescord +=  record.accountBalance ;
 
 	return stRescord;
 }
@@ -346,9 +361,9 @@ string convertUserDataToLineOfData( stUsers& record , string seperator = " " )
 {
 	string stRescord = "";
 
-	stRescord = record.userName + seperator;
+	stRescord += record.userName + seperator;
 	stRescord += record.password + seperator;
-	stRescord += record.preimission;
+	stRescord += to_string( record.preimission );
 	return stRescord;
 }
 void WriteRecordToFile( string fileName , stAccountData& record )
@@ -396,6 +411,27 @@ vector<stAccountData> refreshFileAfterDeleteAccount( string fileName , stAccount
 	}
 	return vRecord;
 }
+vector<stUsers> refreshUsersFileAfterDeleteAccount( string fileName , stUsers& user )
+{
+	vector<stUsers> vRecord;
+	fstream file;
+	file.open( fileName , ios::in );
+
+	if ( file.is_open() )
+	{
+		string line;
+		while ( getline( file , line ) )
+		{
+			if ( user.deleteFlag == false )
+			{
+				user = convertUserLineToRecord( line , "#//#" );
+				vRecord.push_back( user );
+			}
+		}
+		file.close();
+	}
+	return vRecord;
+}
 void printClientData( stAccountData& client ) {
 	cout << "|" << left << setw( 15 ) << client.accountNumber;
 	cout << "|" << left << setw( 10 ) << client.pinCode;
@@ -407,7 +443,7 @@ void printClientData( stAccountData& client ) {
 void printUserData( stUsers& user ) {
 	cout << "|" << left << setw( 15 ) << user.userName;
 	cout << "|" << left << setw( 10 ) << user.password;
-	cout << "|" << left << setw( 40 ) << user.preimission;
+	cout << "|" << left << setw( 10 ) << user.preimission;
 	cout << endl;
 }
 void printBalancesData( stAccountData& client )
@@ -446,6 +482,18 @@ bool findClientByAccountNumber( vector<stAccountData>& vClients , stAccountData&
 		if ( cl.accountNumber == accountNumberToFind )
 		{
 			client = cl; // if we find the account number we fill the client struct and return
+			return true;
+		}
+	}
+	return false;
+}
+bool findUserByUserName( vector<stUsers>& vUsers , stUsers& user , string userName )
+{
+	for ( stUsers& cl : vUsers )
+	{
+		if ( cl.userName == userName )
+		{
+			user = cl; // if we find the account number we fill the client struct and return
 			return true;
 		}
 	}
@@ -529,6 +577,24 @@ vector<stAccountData> saveClientsDataToFileAfterDelete( string fileName , vector
 	}
 	return vClients;
 }
+vector<stUsers> saveUsersDataToFileAfterDelete( string fileName , vector<stUsers>& vUsers )
+{
+	fstream file;
+	file.open( fileName , ios::out ); // overwrite
+	string line;
+	if ( file.is_open() )
+	{
+		for ( stUsers& cl : vUsers )
+		{
+			if ( cl.deleteFlag == false )
+			{
+				WriteUserRecordToFile( UsersFile , cl );
+			}
+		}
+		file.close();
+	}
+	return vUsers;
+}
 vector<stAccountData> saveClientsDataToFileAfterUpdate( string fileName , vector<stAccountData>& vClients )
 {
 	fstream file;
@@ -543,6 +609,21 @@ vector<stAccountData> saveClientsDataToFileAfterUpdate( string fileName , vector
 		file.close();
 	}
 	return vClients;
+}
+vector<stUsers> saveUsersDataToFileAfterUpdate( string fileName , vector<stUsers>& vUsers )
+{
+	fstream file;
+	file.open( fileName , ios::out ); // overwrite
+	string line;
+	if ( file.is_open() )
+	{
+		for ( stUsers& cl : vUsers )
+		{
+			WriteUserRecordToFile( UsersFile , cl );
+		}
+		file.close();
+	}
+	return vUsers;
 }
 void readRecordToFile( stAccountData& stRecord )
 {
@@ -571,6 +652,21 @@ void deleteClients( vector<stAccountData>& vClients , stAccountData& client , st
 	// refresh the clients
 	vClients = refreshFileAfterDeleteAccount( "clinet_Data_File.txt" , client );
 }
+void deleteUserData( vector<stUsers>& vUsers , stUsers& user , string userNameToDelete )
+{
+
+	for ( stUsers& cl : vUsers )
+	{
+		if ( cl.userName == userNameToDelete )
+		{
+			cl.deleteFlag = true;
+			saveUsersDataToFileAfterDelete( UsersFile , vUsers );
+			break;
+		}
+	}
+	// refresh the clients
+	vUsers = refreshUsersFileAfterDeleteAccount( UsersFile , user );
+}
 void updateClients( vector<stAccountData>& vClients , stAccountData& client , string accountNumber )
 {
 	stAccountData updatedClient = readToUpdateRecord();
@@ -579,27 +675,40 @@ void updateClients( vector<stAccountData>& vClients , stAccountData& client , st
 	{
 		if ( cl.accountNumber == accountNumber )
 		{
-			cl.pinCode = updatedClient.pinCode;
 			cl.name = updatedClient.name;
+			cl.pinCode = updatedClient.pinCode;
 			cl.phone = updatedClient.phone;
 			cl.accountBalance = updatedClient.accountBalance;
-			saveClientsDataToFileAfterUpdate( "clinet_Data_File.txt" , vClients );
+			saveClientsDataToFileAfterUpdate( ClientsFile , vClients );
+			break;
+		}
+	}
+}
+void updateUser( vector<stUsers>& vUsers , stUsers& user , string accountName )
+{
+	stUsers updatedUser = readToUpdateUserRecord();
+
+	for ( stUsers& cl : vUsers )
+	{
+		if ( cl.userName == accountName )
+		{
+			cl.userName = updatedUser.userName;
+			cl.password = updatedUser.password;
+			cl.preimission = updatedUser.preimission;
+			saveUsersDataToFileAfterUpdate( UsersFile , vUsers );
 			break;
 		}
 	}
 }
 void showClients() {
-	vector<stAccountData> vClients = ReadFileToVector( ClientsFile );
-	drowHeader();
-	if ( UserAccount.preimission == enPremissions::eAll || UserAccount.preimission == enPremissions::pListClients )
-	{
-		showClientsData( vClients );
-	}
-	else
+	if ( !chechPremissions( enPremissions::pListClients ) )
 	{
 		cout << "Access Denied,,\n Please Contact Your Admin..\n\n" << endl;
-		drowFooter();
+		return;
 	}
+	vector<stAccountData> vClients = ReadFileToVector( ClientsFile );
+	drowHeader();
+	showClientsData( vClients );
 	drowFooter();
 }
 void showUserss() {
@@ -609,27 +718,27 @@ void showUserss() {
 	drowFooter();
 }
 void addClient() {
-	if ( UserAccount.preimission == enPremissions::eAll || UserAccount.preimission == enPremissions::pAddNewClint )
+	if ( !chechPremissions( enPremissions::pAddNewClint ) )
 	{
-		stAccountData stRecord;
-		char more = 'y';
-
-		// Insert Clients Data
-		do
-		{
-			system( "cls" );
-			cout << "Enter Client Data: \n";
-
-			readRecordToFile( stRecord );
-
-			cout << "Do You Want To Add Other Rcords? : y => yes | n => no : ";
-			cin >> more;
-		} while ( more == 'y' || more == 'Y' );
+		cout << "Access Denied,,\n Please Contact Your Admin..\n\n" << endl;
+		return;
 	}
-	else
+
+	stAccountData stRecord;
+	char more = 'y';
+
+	// Insert Clients Data
+	do
 	{
-		cout << "Access Denied ,, \nPlease Contact Your Admin..\n\n" << endl;
-	}
+		system( "cls" );
+		cout << "Enter Client Data: \n";
+
+		readRecordToFile( stRecord );
+
+		cout << "Do You Want To Add Other Rcords? : y => yes | n => no : ";
+		cin >> more;
+	} while ( more == 'y' || more == 'Y' );
+
 
 }
 void addUser() {
@@ -649,126 +758,194 @@ void addUser() {
 	} while ( more == 'y' || more == 'Y' );
 }
 void findClient() {
-	if ( UserAccount.preimission == enPremissions::eAll || UserAccount.preimission == enPremissions::pFindClients )
+	if ( !chechPremissions( enPremissions::pFindClients ) )
 	{
-		showClients();
-		vector<stAccountData> vClients = ReadFileToVector( "clinet_Data_File.txt" );
-		stAccountData client;
-		string accountToFind = "";
-		cout << "Do You Want To Search For Client? ";
-		getline( cin >> ws , accountToFind );
-		if ( findClientByAccountNumber( vClients , client , accountToFind ) )
-		{
+		cout << "Access Denied,,\n Please Contact Your Admin..\n\n" << endl;
+		return;
+	}
+	showClients();
+	vector<stAccountData> vClients = ReadFileToVector( "clinet_Data_File.txt" );
+	stAccountData client;
+	string accountToFind = "";
+	cout << "Do You Want To Search For Client? ";
+	getline( cin >> ws , accountToFind );
+	if ( findClientByAccountNumber( vClients , client , accountToFind ) )
+	{
 
-			drowHeader();
-			printClientData( client );
-			drowFooter();
-		}
-		else
-		{
-			cout << "No Account With That Number.." << endl;
-		}
+		drowHeader();
+		printClientData( client );
+		drowFooter();
 	}
 	else
 	{
-		cout << "Access Denied ,, \nPlease Contact Your Admin..\n\n" << endl;
+		cout << "No Account With That Number.." << endl;
 	}
+}
+void findUser() {
 
+	showUserss();
+	vector<stUsers> vUsers = ReadUsersFileToVector( UsersFile );
+	stUsers user;
+	string UserNameToFind = "";
+	cout << "Do You Want To Search For User? ";
+	getline( cin >> ws , UserNameToFind );
+	if ( findUserByUserName( vUsers , user , UserNameToFind ) )
+	{
 
+		drowHeader();
+		printUserData( user );
+		drowFooter();
+	}
+	else
+	{
+		cout << "No User With That Name.." << endl;
+	}
 }
 void deleteClient() {
-	if ( UserAccount.preimission == enPremissions::eAll || UserAccount.preimission == enPremissions::pDeleteClient )
+	if ( !chechPremissions( enPremissions::pDeleteClient ) )
 	{
-		showClients();
-		vector <stAccountData> vClients = ReadFileToVector( "clinet_Data_File.txt" );
-		string accountToFind = "";
-		string accountNumberToDelete;
-		stAccountData client;
-		cout << "Enter An Account Number To Delete: ";
-		getline( cin >> ws , accountNumberToDelete );
-		if ( findClientByAccountNumber( vClients , client , accountNumberToDelete ) )
+		cout << "Access Denied,,\n Please Contact Your Admin..\n\n" << endl;
+		return;
+	}
+	showClients();
+	vector <stAccountData> vClients = ReadFileToVector( "clinet_Data_File.txt" );
+	string accountToFind = "";
+	string accountNumberToDelete;
+	stAccountData client;
+	cout << "Enter An Account Number To Delete: ";
+	getline( cin >> ws , accountNumberToDelete );
+	if ( findClientByAccountNumber( vClients , client , accountNumberToDelete ) )
+	{
+		system( "cls" );
+		drowHeader();
+		printClientData( client );
+		drowFooter();
+		char del;
+		cout << "Are You Sure You Want to delete " << client.name << " ?";
+		cin >> del;
+		if ( del == 'y' || del == 'Y' )
 		{
-			system( "cls" );
-			drowHeader();
-			printClientData( client );
-			drowFooter();
-			char del;
-			cout << "Are You Sure You Want to delete " << client.name << " ?";
-			cin >> del;
-			if ( del == 'y' || del == 'Y' )
-			{
-				deleteClients( vClients , client , accountNumberToDelete );
-				cout << "The Account Deleted Succsessfuly.." << endl;
-			}
-		}
-		else
-		{
-			cout << "No Account With This " << accountNumberToDelete << "Number.." << endl;
+			deleteClients( vClients , client , accountNumberToDelete );
+			cout << "The Account Deleted Succsessfuly.." << endl;
 		}
 	}
 	else
 	{
-		cout << "Access Denied ,, \nPlease Contact Your Admin..\n\n" << endl;
+		cout << "No Account With This " << accountNumberToDelete << "Number.." << endl;
+	}
+
+}
+void deleteUser() {
+
+	showUserss();
+	vector <stUsers> vUsers = ReadUsersFileToVector( UsersFile );
+	string accountToFind = "";
+	string accountNameToDelete;
+	stUsers user;
+	cout << "Enter An Account Name To Delete: ";
+	getline( cin >> ws , accountNameToDelete );
+	if ( findUserByUserName( vUsers , user , accountNameToDelete ) )
+	{
+		system( "cls" );
+		drowHeader();
+		printUserData( user );
+		drowFooter();
+		char del;
+		cout << "Are You Sure You Want to delete " << user.userName << " ?";
+		cin >> del;
+		if ( del == 'y' || del == 'Y' )
+		{
+			deleteUserData( vUsers , user , accountNameToDelete );
+			cout << "The Account Deleted Succsessfuly.." << endl;
+		}
+	}
+	else
+	{
+		cout << "No Account With This " << accountNameToDelete << "Name.." << endl;
 	}
 
 }
 void updateClient() {
-	if ( UserAccount.preimission == enPremissions::eAll || UserAccount.preimission == enPremissions::pUpdateClients )
+	if ( !chechPremissions( enPremissions::pUpdateClients ) )
 	{
-		showClients();
-		vector<stAccountData> vClients = ReadFileToVector( "clinet_Data_File.txt" );
-		stAccountData client;
-		string accountToFind = "";
-		cout << "Do You Want To Search For Client? ";
-		getline( cin >> ws , accountToFind );
-		if ( findClientByAccountNumber( vClients , client , accountToFind ) )
+		cout << "Access Denied,,\n Please Contact Your Admin..\n\n" << endl;
+		return;
+	}
+	showClients();
+	vector<stAccountData> vClients = ReadFileToVector( "clinet_Data_File.txt" );
+	stAccountData client;
+	string accountToFind = "";
+	cout << "Do You Want To Search For Client? ";
+	getline( cin >> ws , accountToFind );
+	if ( findClientByAccountNumber( vClients , client , accountToFind ) )
+	{
+		system( "cls" );
+		drowHeader();
+		printClientData( client );
+		drowFooter();
+		// update Client
+		char updateOrNot;
+		cout << "Do you Want To Update Client (" << client.name << ") ?";
+		cin >> updateOrNot;
+		if ( updateOrNot == 'Y' || updateOrNot == 'y' )
 		{
-			system( "cls" );
-			drowHeader();
-			printClientData( client );
-			drowFooter();
-			// update Client
-			char updateOrNot;
-			cout << "Do you Want To Update Client (" << client.name << ") ?";
-			cin >> updateOrNot;
-			if ( updateOrNot == 'Y' || updateOrNot == 'y' )
-			{
-				updateClients( vClients , client , accountToFind );
-			}
-		}
-		else
-		{
-			cout << "No Account With That Number.." << endl;
+			updateClients( vClients , client , accountToFind );
 		}
 	}
 	else
 	{
-		cout << "Access Denied ,, \nPlease Contact Your Admin..\n\n" << endl;
+		cout << "No Account With That Number.." << endl;
+	}
+
+}
+void updateUser() {
+
+	showUserss();
+	vector<stUsers> vUserss = ReadUsersFileToVector( UsersFile );
+	stUsers user;
+	string accountToFind = "";
+	cout << "Do You Want To Search For User? ";
+	getline( cin >> ws , accountToFind );
+	if ( findUserByUserName( vUserss , user , accountToFind ) )
+	{
+		system( "cls" );
+		drowHeader();
+		printUserData( user );
+		drowFooter();
+		// update Client
+		char updateOrNot;
+		cout << "Do you Want To Update User (" << user.userName << ") ?";
+		cin >> updateOrNot;
+		if ( updateOrNot == 'Y' || updateOrNot == 'y' )
+		{
+			updateUser( vUserss , user , accountToFind );
+		}
+	}
+	else
+	{
+		cout << "No Account With That Name.." << endl;
 	}
 
 }
 short showTransactionsOptions() {
-	if ( UserAccount.preimission == enPremissions::eAll || UserAccount.preimission == enPremissions::pTransactions )
+	if ( !chechPremissions( enPremissions::pTransactions ) )
 	{
-		system( "cls" ); // system("clear");
-		short choice = 0;
-		cout << "\n-------------------------------------------------------\n";
-		cout << "\t\t Transactions Screen\n";
-		cout << "-------------------------------------------------------\n";
-		cout << "\t[1]=> Deposit" << endl;
-		cout << "\t[2]=> Withdrow" << endl;
-		cout << "\t[3]=> TotalBalance" << endl;
-		cout << "\t[4]=> Main Menue";
-		cout << "\n-------------------------------------------------------\n";
-		cout << "Choose What You Want To Do From [1 - 4] ?: ";
-		cin >> choice;
-		return choice;
+		cout << "Access Denied,,\n Please Contact Your Admin..\n\n" << endl;
 	}
-	else
-	{
-		cout << "Access Denied ,, \nPlease Contact Your Admin..\n\n" << endl;
-		return 0;
-	}
+	system( "cls" ); // system("clear");
+	short choice = 0;
+	cout << "\n-------------------------------------------------------\n";
+	cout << "\t\t Transactions Screen\n";
+	cout << "-------------------------------------------------------\n";
+	cout << "\t[1]=> Deposit" << endl;
+	cout << "\t[2]=> Withdrow" << endl;
+	cout << "\t[3]=> TotalBalance" << endl;
+	cout << "\t[4]=> Main Menue";
+	cout << "\n-------------------------------------------------------\n";
+	cout << "Choose What You Want To Do From [1 - 4] ?: ";
+	cin >> choice;
+	return choice;
+
 
 }
 void Deposit() {
@@ -878,6 +1055,20 @@ bool loadUser( string userName , string password ) {
 	}
 }
 //////////////users///////////////////
+bool chechPremissions( enPremissions premission ) {
+	if ( UserAccount.preimission == enPremissions::eAll )
+	{
+		return true;
+	}
+	if ( ( premission & UserAccount.preimission ) == premission )
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
 void screens( enManagUsersOptions choice );
 void login() {
 	bool loginFlag = false;
@@ -889,6 +1080,10 @@ void login() {
 		cout << "\n-------------------------------------------------------\n";
 		cout << "\t\t\t LOGIN PAGE\n";
 		cout << "-------------------------------------------------------\n";
+		if ( loginFlag )
+		{
+			cout << "Invalid Username Or Password.." << endl;
+		}
 		cout << "Enter User Name: ";
 		getline( cin >> ws , userName );
 		cout << "Enter Password: ";
@@ -945,19 +1140,24 @@ void screens( enManagUsersOptions choice ) {
 		break;
 	case enManagUsersOptions::DeleteUser:
 		system( "cls" );
+		deleteUser();
+		backToManageUsersMainMenue();
 		break;
 	case enManagUsersOptions::UpdateUser:
 		system( "cls" );
+		updateUser();
+		backToManageUsersMainMenue();
 		break;
 	case enManagUsersOptions::FindUser:
 		system( "cls" );
+		findUser();
+		backToManageUsersMainMenue();
 		break;
 	case enManagUsersOptions::Transactions:
 		system( "cls" );
 		performTransaction( ( enTransactions ) showTransactionsOptions() );
 		break;
 	case enManagUsersOptions::BackToMAinMenue:
-		system( "cls" );
 		backToMainMenue();
 		break;
 
